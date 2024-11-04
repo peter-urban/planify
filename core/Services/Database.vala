@@ -25,7 +25,7 @@ public class Services.Database : GLib.Object {
 	private string errormsg;
 	private string sql;
 
-	private Gee.HashMap<string, Gee.ArrayList<string>> table_columns = new Gee.HashMap<string, Gee.ArrayList<string>> ();
+	private Gee.HashMap<string, Gee.ArrayList<string>> table_columns = new Gee.HashMap<string, Gee.ArrayList<string>>();
 
 	public signal void opened ();
 	public signal void reset ();
@@ -689,6 +689,7 @@ public class Services.Database : GLib.Object {
 
 		while (stmt.step () == Sqlite.ROW) {
 			if (!columns.contains (stmt.column_text (1))) {
+				print ("Falta: %s: %s\n".printf (table, stmt.column_text (1)));
 				return false;
 			}
 		}
