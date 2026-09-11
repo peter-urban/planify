@@ -132,6 +132,7 @@ public class Services.Database : GLib.Object {
         table_columns["Projects"].add ("calendar_source_uid");
         table_columns["Projects"].add ("markdown_setting");
         table_columns["Projects"].add ("extra_data");
+        table_columns["Projects"].add ("is_hidden");
 
         table_columns["Queue"] = new Gee.ArrayList<string> ();
         table_columns["Queue"].add ("uuid");
@@ -711,6 +712,13 @@ public class Services.Database : GLib.Object {
          * - Add is_trash column to Items for pending delete support
          */
         add_int_column ("Items", "is_trash", 0);
+
+        /*
+         * THIS PR: Hide Projects
+         * - Add is_hidden column to Projects for hiding a project's tasks
+         *   from the cross-project views without archiving it
+         */
+        add_int_column ("Projects", "is_hidden", 0);
     }
 
     public void clear_database () {
@@ -975,6 +983,7 @@ public class Services.Database : GLib.Object {
         return_value.calendar_source_uid = stmt.column_text (25);
         return_value.markdown_setting = MarkdownSetting.parse (stmt.column_text (26));
         return_value.extra_data = stmt.column_text (27);
+        return_value.is_hidden = get_parameter_bool (stmt, 28);
         return return_value;
     }
 
@@ -985,11 +994,11 @@ public class Services.Database : GLib.Object {
             INSERT OR IGNORE INTO Projects (id, name, color, backend_type, inbox_project,
                 team_inbox, child_order, is_deleted, is_archived, is_favorite, shared, view_style,
                 sort_order, parent_id, collapsed, icon_style, emoji, show_completed, description, due_date,
-                inbox_section_hidded, sync_id, source_id, calendar_url, sorted_by, calendar_source_uid, markdown_setting, extra_data)
+                inbox_section_hidded, sync_id, source_id, calendar_url, sorted_by, calendar_source_uid, markdown_setting, extra_data, is_hidden)
             VALUES ($id, $name, $color, $backend_type, $inbox_project, $team_inbox,
                 $child_order, $is_deleted, $is_archived, $is_favorite, $shared, $view_style,
                 $sort_order, $parent_id, $collapsed, $icon_style, $emoji, $show_completed, $description, $due_date,
-                $inbox_section_hidded, $sync_id, $source_id, $calendar_url, $sorted_by, $calendar_source_uid, $markdown_setting, $extra_data);
+                $inbox_section_hidded, $sync_id, $source_id, $calendar_url, $sorted_by, $calendar_source_uid, $markdown_setting, $extra_data, $is_hidden);
         """;
 
         db.prepare_v2 (sql, sql.length, out stmt);
@@ -1021,6 +1030,7 @@ public class Services.Database : GLib.Object {
         set_parameter_str (stmt, "$calendar_source_uid", project.calendar_source_uid);
         set_parameter_str (stmt, "$markdown_setting", project.markdown_setting.to_string ());
         set_parameter_str (stmt, "$extra_data", project.extra_data);
+        set_parameter_bool (stmt, "$is_hidden", project.is_hidden);
 
         int result = stmt.step ();
         if (result != Sqlite.DONE) {
@@ -1099,7 +1109,8 @@ public class Services.Database : GLib.Object {
                 sorted_by=$sorted_by,
                 calendar_source_uid=$calendar_source_uid,
                 markdown_setting=$markdown_setting,
-                extra_data=$extra_data
+                extra_data=$extra_data,
+                is_hidden=$is_hidden
             WHERE id=$id;
         """;
 
@@ -1133,6 +1144,7 @@ public class Services.Database : GLib.Object {
         set_parameter_str (stmt, "$calendar_source_uid", project.calendar_source_uid);
         set_parameter_str (stmt, "$markdown_setting", project.markdown_setting.to_string ());
         set_parameter_str (stmt, "$extra_data", project.extra_data);
+        set_parameter_bool (stmt, "$is_hidden", project.is_hidden);
         set_parameter_str (stmt, "$id", project.id);
 
         int result = stmt.step ();

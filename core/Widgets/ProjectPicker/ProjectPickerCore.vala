@@ -197,7 +197,7 @@ public class Widgets.ProjectPickerCore : Adw.Bin {
                 continue;
             }
 
-            if (!project.source.is_visible || project.is_archived || project.id == inbox_project.id) {
+            if (!project.source.is_visible || project.is_archived || project.is_hidden || project.id == inbox_project.id) {
                 continue;
             }
 

@@ -126,7 +126,7 @@ public class Dialogs.ProductivityReport.SummarySection : Adw.Bin {
         int completed = 0;
 
         foreach (Objects.Item item in Services.Store.instance ().items) {
-            if (item.was_archived ()) {
+            if (item.was_archived () || item.is_hidden ()) {
                 continue;
             }
 

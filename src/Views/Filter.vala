@@ -71,7 +71,7 @@ public class Views.Filter : Adw.Bin {
         }
     }
 
-    private bool has_visible_items {
+    private bool has_hide_items {
         get {
             if (items_list == null || items_list.size == 0) return false;
             if (selected_project_ids.size == 0 && filter.filters.size == 0) return true;
@@ -814,20 +814,20 @@ public class Views.Filter : Adw.Bin {
     }
 
     private void validate_placeholder () {
-        if (filter is Objects.Filters.Completed && !has_visible_items && selected_project_ids.size > 0) {
+        if (filter is Objects.Filters.Completed && !has_hide_items && selected_project_ids.size > 0) {
             listbox_placeholder.title = _("No completed tasks");
             listbox_placeholder.description = _("No tasks found for the selected projects");
         } else if (filter is Objects.Filters.Completed) {
             listbox_placeholder.title = _("All tasks completed!");
             listbox_placeholder.description = _("Great job, nothing left to do 🎉");
-        } else if (sorting_supported && !has_visible_items && filter.filters.size > 0) {
+        } else if (sorting_supported && !has_hide_items && filter.filters.size > 0) {
             listbox_placeholder.title = _("No tasks found");
             listbox_placeholder.description = _("No tasks match the selected filters");
         } else {
             listbox_placeholder.title = _("Add Some Tasks");
             listbox_placeholder.description = _("Press 'a' to create a new task");
         }
-        listbox_stack.visible_child_name = has_visible_items ? "listbox" : "placeholder";
+        listbox_stack.visible_child_name = has_hide_items ? "listbox" : "placeholder";
         invalidate_listbox ();
     }
 

@@ -2078,6 +2078,11 @@ public class Objects.Item : Objects.BaseObject {
         return _project_id == project.id;
     }
 
+    public bool is_hidden () {
+        var project_item = project;
+        return project_item == null ? false : project_item.is_hidden;
+    }
+
     public string to_markdown (int level = 0) {
         string text = "%*s- %s%s%s\n".printf (level * 2, "", checked ? "[x]" : "[ ]", Utils.Datetime.get_markdown_format_date (this), content);
 

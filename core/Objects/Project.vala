@@ -31,6 +31,7 @@ public class Objects.Project : Objects.BaseObject {
     public bool team_inbox { get; set; default = false; }
     public bool is_deleted { get; set; default = false; }
     public bool is_archived { get; set; default = false; }
+    public bool is_hidden { get; set; default = false; }
     public bool is_favorite { get; set; default = false; }
     public bool shared { get; set; default = false; }
     public bool collapsed { get; set; default = false; }
@@ -378,6 +379,10 @@ public class Objects.Project : Objects.BaseObject {
 
         if (node.get_object ().has_member ("extra_data")) {
             extra_data = node.get_object ().get_string_member ("extra_data");
+        }
+
+        if (node.get_object ().has_member ("is_hidden")) {
+            is_hidden = node.get_object ().get_boolean_member ("is_hidden");
         }
     }
 

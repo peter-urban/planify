@@ -101,6 +101,7 @@ public class Services.BackupExporter : Object {
             builder.set_member_name ("child_order"); builder.add_int_value (project.child_order);
             builder.set_member_name ("is_deleted"); builder.add_boolean_value (project.is_deleted);
             builder.set_member_name ("is_archived"); builder.add_boolean_value (project.is_archived);
+            builder.set_member_name ("is_hidden"); builder.add_boolean_value (project.is_hidden);
             builder.set_member_name ("is_favorite"); builder.add_boolean_value (project.is_favorite);
             builder.set_member_name ("shared"); builder.add_boolean_value (project.shared);
             builder.set_member_name ("view_style"); builder.add_string_value (project.view_style.to_string ());

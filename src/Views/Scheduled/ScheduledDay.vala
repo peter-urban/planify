@@ -174,7 +174,7 @@ public class Views.Scheduled.ScheduledDay : Views.Scheduled.ScheduledSection {
         // Add items with deadline today
         if (Utils.Datetime.is_today (date)) {
             foreach (Objects.Item item in Services.Store.instance ().items) {
-                if (!item.checked && !item.was_archived () && item.has_deadline) {
+                if (!item.checked && !item.was_archived () && !item.is_hidden () && item.has_deadline) {
                     var deadline_date = Utils.Datetime.get_date_only (item.deadline_datetime);
                     if (Utils.Datetime.is_today (deadline_date) && !items.has_key (item.id)) {
                         add_item (item);
@@ -186,7 +186,7 @@ public class Views.Scheduled.ScheduledDay : Views.Scheduled.ScheduledSection {
 
     protected override bool valid_item_predicate (Objects.Item item) {
         bool valid_due = item.has_due && Services.Store.instance ().valid_item_by_date (item, date, false);
-        bool valid_deadline = Utils.Datetime.is_today (date) && item.has_deadline &&
+        bool valid_deadline = !item.is_hidden () && Utils.Datetime.is_today (date) && item.has_deadline &&
         Utils.Datetime.is_today (Utils.Datetime.get_date_only (item.deadline_datetime));
 
         return valid_due || valid_deadline;

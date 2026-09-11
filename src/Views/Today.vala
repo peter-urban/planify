@@ -597,7 +597,7 @@ public class Views.Today : Adw.Bin {
         }
 
         foreach (Objects.Item item in Services.Store.instance ().items) {
-            if (!item.checked && !item.was_archived () && item.has_deadline) {
+            if (!item.checked && !item.was_archived () && !item.is_hidden () && item.has_deadline) {
                 var deadline_date = Utils.Datetime.get_date_only (item.deadline_datetime);
 
                 if (Utils.Datetime.is_today (deadline_date) && !items.has_key (item.id)) {
@@ -655,14 +655,14 @@ public class Views.Today : Adw.Bin {
 
     private void valid_add_item (Objects.Item item) {
         bool valid_due_today = item.has_due && Services.Store.instance ().valid_item_by_date (item, date, false);
-        bool valid_deadline_today = item.has_deadline && Utils.Datetime.is_today (Utils.Datetime.get_date_only (item.deadline_datetime));
+        bool valid_deadline_today = !item.is_hidden () && item.has_deadline && Utils.Datetime.is_today (Utils.Datetime.get_date_only (item.deadline_datetime));
 
         if (!items.has_key (item.id) && (valid_due_today || valid_deadline_today)) {
             add_item (item);
         }
 
         bool valid_due_overdue = item.has_due && Services.Store.instance ().valid_item_by_overdue (item, date, false);
-        bool valid_deadline_overdue = item.has_deadline && Utils.Datetime.is_overdue (Utils.Datetime.get_date_only (item.deadline_datetime));
+        bool valid_deadline_overdue = !item.is_hidden () && item.has_deadline && Utils.Datetime.is_overdue (Utils.Datetime.get_date_only (item.deadline_datetime));
 
         if (!overdue_items.has_key (item.id) && (valid_due_overdue || valid_deadline_overdue)) {
             add_overdue_item (item);

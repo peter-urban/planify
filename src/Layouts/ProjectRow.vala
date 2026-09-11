@@ -42,6 +42,7 @@ public class Layouts.ProjectRow : Gtk.ListBoxRow {
 
     private Gtk.Popover menu_popover = null;
     private Widgets.ContextMenu.MenuItem favorite_item;
+    private Widgets.ContextMenu.MenuItem hide_item;
 
     private Gtk.Grid motion_top_grid;
     private Gtk.Revealer motion_top_revealer;
@@ -700,6 +701,7 @@ public class Layouts.ProjectRow : Gtk.ListBoxRow {
     private void build_context_menu (double x, double y) {
         if (menu_popover != null) {
             favorite_item.title = project.is_favorite ? _("Remove From Favorites") : _("Add to Favorites");
+            hide_item.title = project.is_hidden ? _("Unhide") : _("Hide Project");
             menu_popover.pointing_to = { ((int) x), (int) y, 1, 1 };
             menu_popover.popup ();
             return;
@@ -713,6 +715,13 @@ public class Layouts.ProjectRow : Gtk.ListBoxRow {
         var archive_item = new Widgets.ContextMenu.MenuItem (_("Archive"), "shoe-box-symbolic");
         var delete_item = new Widgets.ContextMenu.MenuItem (_("Delete Project"), "user-trash-symbolic");
         delete_item.add_css_class ("menu-item-danger");
+
+        hide_item = new Widgets.ContextMenu.MenuItem (
+            project.is_hidden ? _("Unhide") : _("Hide Project"),
+            "eye-open-negative-filled-symbolic"
+        ) {
+            tooltip_text = _("Hide this project's tasks from Today, Scheduled, Labels and Search without changing anything online")
+        };
 
         var share_markdown_item = new Widgets.ContextMenu.MenuItem (_("Share"), "share-alt-symbolic");
         var share_email_item = new Widgets.ContextMenu.MenuItem (_("Send by E-Mail"), "mail-symbolic");
@@ -738,6 +747,7 @@ public class Layouts.ProjectRow : Gtk.ListBoxRow {
 
         if (!project.inbox_project) {
             menu_box.append (new Widgets.ContextMenu.MenuSeparator ());
+            menu_box.append (hide_item);
             menu_box.append (archive_item);
             menu_box.append (delete_item);
         }
@@ -819,6 +829,11 @@ public class Layouts.ProjectRow : Gtk.ListBoxRow {
         archive_item.clicked.connect (() => {
             project.archive_project ((Gtk.Window) Planify.instance.main_window);
         });
+
+        hide_item.clicked.connect (() => {
+            project.is_hidden = !project.is_hidden;
+            Services.Store.instance ().update_project_visibility (project);
+        });
     }
 
     private void sync_project () {
@@ -844,6 +859,12 @@ public class Layouts.ProjectRow : Gtk.ListBoxRow {
         icon_project.update_request ();
         name_label.label = project.name;
         check_due_date ();
+
+        if (project.is_hidden) {
+            handle_grid.add_css_class ("dimmed");
+        } else {
+            handle_grid.remove_css_class ("dimmed");
+        }
     }
 
     private void check_due_date () {

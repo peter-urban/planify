@@ -83,7 +83,7 @@ public class Dialogs.ProductivityReport.HeatMap : Adw.Bin {
 
         var counts = new Gee.HashMap<string, int> ();
         foreach (Objects.Item item in Services.Store.instance ().items) {
-            if (!item.checked || item.completed_at == "" || item.was_archived ()) continue;
+            if (!item.checked || item.completed_at == "" || item.was_archived () || item.is_hidden ()) continue;
             var d = Utils.Datetime.get_date_from_string (item.completed_at);
             if (d == null) continue;
             var key = Utils.Datetime.get_date_only (d).format ("%Y-%m-%d");

@@ -48,8 +48,12 @@ public class Services.ProductivityService : Object {
     construct {
         Services.Store.instance ().item_added.connect ((item, _) => { recalculate (); });
         Services.Store.instance ().item_deleted.connect ((item) => { recalculate (); });
-        Services.Store.instance ().item_archived.connect ((item) => { recalculate (); });
-        Services.Store.instance ().item_unarchived.connect ((item) => { recalculate (); });
+        Services.Store.instance ().item_archived.connect ((item) => {
+            if (!item.project.freeze_update) { recalculate (); }
+        });
+        Services.Store.instance ().item_unarchived.connect ((item) => {
+            if (!item.project.freeze_update) { recalculate (); }
+        });
         Services.Store.instance ().item_updated.connect ((item, _) => { recalculate (); });
         Services.Store.instance ().project_updated.connect ((project) => { recalculate (); });
 
@@ -75,7 +79,7 @@ public class Services.ProductivityService : Object {
         int c_month = 0;
 
         foreach (Objects.Item item in Services.Store.instance ().items) {
-            if (!item.checked || item.completed_at == "" || item.was_archived ()) continue;
+            if (!item.checked || item.completed_at == "" || item.was_archived () || item.is_hidden ()) continue;
 
             var completed_date = Utils.Datetime.get_date_from_string (item.completed_at);
             if (completed_date == null) continue;
