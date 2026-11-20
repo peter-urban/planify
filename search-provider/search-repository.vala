@@ -99,6 +99,7 @@ public class Planify.SearchRepository : Object {
             LEFT JOIN Projects p ON i.project_id = p.id
             WHERE i.is_deleted = 0 AND i.checked = 0
             AND (p.is_archived = 0 OR p.is_archived IS NULL)
+            AND (p.is_hidden = 0 OR p.is_hidden IS NULL)
             AND (LOWER(i.content) LIKE $term OR LOWER(i.description) LIKE $term)
             LIMIT 5;
         """;

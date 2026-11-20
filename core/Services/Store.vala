@@ -471,6 +471,33 @@ public class Services.Store : GLib.Object {
         }
     }
 
+    /*
+     * HIDE PROJECTS FEATURE: toggle a project's local-only is_hidden flag.
+     *
+     * Hiding changes nothing in the data and never syncs; it only decides whether a
+     * project's tasks surface in cross-project overviews (that gate runs through
+     * Objects.Item.was_archived ()). To refresh those views live we reuse the
+     * item_archived / item_unarchived signals the overviews already listen to, so no
+     * new per-view wiring is needed. freeze_update collapses the per-item signal
+     * storm into a single recount/recalc at the end.
+     */
+    public void update_project_visibility (Objects.Project project) {
+        if (Services.Database.get_default ().update_project (project)) {
+            project.freeze_update = true;
+            foreach (Objects.Item item in get_items_by_project (project)) {
+                if (project.is_hidden) {
+                    item_archived (item);
+                } else {
+                    item_unarchived (item);
+                }
+            }
+            project.freeze_update = false;
+
+            project.updated ();
+            project_updated (project);
+        }
+    }
+
     public void update_project_id (string current_id, string new_id) {
         if (Services.Database.get_default ().update_project_id (current_id, new_id)) {
             Objects.Project ? project = get_project (current_id);
@@ -1036,7 +1063,9 @@ public class Services.Store : GLib.Object {
         Gee.ArrayList<Objects.Item> return_value = new Gee.ArrayList<Objects.Item> ();
         lock (_items) {
             foreach (Objects.Item item in items) {
-                if (item.checked) {
+                // HIDE PROJECTS FEATURE: this overview has no was_archived () gate, so
+                // exclude hidden projects explicitly (see Objects.Item.was_archived ()).
+                if (item.checked && !item.is_hidden ()) {
                     return_value.add (item);
                 }
             }
@@ -1135,7 +1164,9 @@ public class Services.Store : GLib.Object {
         Gee.ArrayList<Objects.Item> return_value = new Gee.ArrayList<Objects.Item> ();
         lock (_items) {
             foreach (Objects.Item item in items) {
-                if (!item.has_due && item.checked == checked) {
+                // HIDE PROJECTS FEATURE: this overview has no was_archived () gate, so
+                // exclude hidden projects explicitly (see Objects.Item.was_archived ()).
+                if (!item.has_due && item.checked == checked && !item.is_hidden ()) {
                     return_value.add (item);
                 }
             }
@@ -1483,7 +1514,10 @@ public class Services.Store : GLib.Object {
         Gee.ArrayList<Objects.Section> return_value = new Gee.ArrayList<Objects.Section> ();
         lock (_sections) {
             foreach (var section in sections) {
-                if (search_text.down () in section.name.down () && !section.was_archived ()) {
+                // HIDE PROJECTS FEATURE: section search is section-level, so the
+                // item was_archived () fold doesn't apply; skip hidden projects here.
+                if (search_text.down () in section.name.down () && !section.was_archived () &&
+                    (section.project == null || !section.project.is_hidden)) {
                     return_value.add (section);
                 }
             }

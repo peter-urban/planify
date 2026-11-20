@@ -31,6 +31,8 @@ public class Objects.Project : Objects.BaseObject {
     public bool team_inbox { get; set; default = false; }
     public bool is_deleted { get; set; default = false; }
     public bool is_archived { get; set; default = false; }
+    // HIDE PROJECTS FEATURE: local-only flag; see Objects.Item.was_archived ().
+    public bool is_hidden { get; set; default = false; }
     public bool is_favorite { get; set; default = false; }
     public bool shared { get; set; default = false; }
     public bool collapsed { get; set; default = false; }
@@ -389,6 +391,11 @@ public class Objects.Project : Objects.BaseObject {
 
         if (node.get_object ().has_member ("extra_data")) {
             extra_data = node.get_object ().get_string_member ("extra_data");
+        }
+
+        // HIDE PROJECTS FEATURE: restore the local-only hidden flag from a backup.
+        if (node.get_object ().has_member ("is_hidden")) {
+            is_hidden = node.get_object ().get_boolean_member ("is_hidden");
         }
     }
 
@@ -834,7 +841,9 @@ public class Objects.Project : Objects.BaseObject {
         int items_checked = 0;
 
         foreach (Objects.Item item in project_items) {
-            bool archived = item.was_archived ();
+            // HIDE PROJECTS FEATURE: use the archive-only check so a hidden project's
+            // own counts (and its in-project placeholder) stay accurate.
+            bool archived = item.is_in_archived_project ();
             if (!item.checked && !archived) {
                 pending_tasks++;
             }

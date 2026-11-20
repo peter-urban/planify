@@ -48,8 +48,15 @@ public class Services.ProductivityService : Object {
     construct {
         Services.Store.instance ().item_added.connect ((item, _) => { recalculate (); });
         Services.Store.instance ().item_deleted.connect ((item) => { recalculate (); });
-        Services.Store.instance ().item_archived.connect ((item) => { recalculate (); });
-        Services.Store.instance ().item_unarchived.connect ((item) => { recalculate (); });
+        // HIDE PROJECTS FEATURE: hiding/unhiding a project fires item_archived /
+        // item_unarchived for every one of its tasks. freeze_update skips those
+        // per-item recalcs; the trailing project_updated below does one recalc.
+        Services.Store.instance ().item_archived.connect ((item) => {
+            if (!item.project.freeze_update) { recalculate (); }
+        });
+        Services.Store.instance ().item_unarchived.connect ((item) => {
+            if (!item.project.freeze_update) { recalculate (); }
+        });
         Services.Store.instance ().item_updated.connect ((item, _) => { recalculate (); });
         Services.Store.instance ().project_updated.connect ((project) => { recalculate (); });
 

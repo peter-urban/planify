@@ -2256,8 +2256,34 @@ public class Objects.Item : Objects.BaseObject {
         }
     }
 
+    /*
+     * HIDE PROJECTS FEATURE (local-only, see Objects.Project.is_hidden).
+     *
+     * was_archived () is the single predicate the whole app already funnels
+     * "should this task appear in a cross-project overview?" through (Today,
+     * Scheduled, Labels, Pinboard, Search, Productivity, ...). Hidden projects must
+     * disappear from exactly those overviews, so is_hidden () is folded in here
+     * once instead of sprinkling `&& !item.is_hidden ()` across every call site.
+     * New upstream overviews that call was_archived () then exclude hidden projects
+     * for free, which keeps future rebases small.
+     *
+     * A project's own Board/List and its task counters must keep showing a hidden
+     * project's tasks, so those call is_in_archived_project (), which ignores the
+     * hidden flag.
+     */
     public bool was_archived () {
+        return is_hidden () || is_in_archived_project ();
+    }
+
+    public bool is_in_archived_project () {
         return was_archived_internal (new Gee.HashSet<string> ());
+    }
+
+    // Hiding is a purely local view filter: unlike archiving it never touches the
+    // data and the project stays fully usable when opened directly.
+    public bool is_hidden () {
+        var project_item = project;
+        return project_item == null ? false : project_item.is_hidden;
     }
 
     private bool was_archived_internal (Gee.Set<string> visited) {

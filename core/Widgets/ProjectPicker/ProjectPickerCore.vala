@@ -197,7 +197,8 @@ public class Widgets.ProjectPickerCore : Adw.Bin {
                 continue;
             }
 
-            if (!project.source.is_visible || project.is_archived || project.id == inbox_project.id) {
+            // HIDE PROJECTS FEATURE: keep hidden projects out of the quick-add picker.
+            if (!project.source.is_visible || project.is_archived || project.is_hidden || project.id == inbox_project.id) {
                 continue;
             }
 

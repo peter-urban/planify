@@ -135,6 +135,9 @@ public class Services.Database : GLib.Object {
         table_columns["Projects"].add ("calendar_source_uid");
         table_columns["Projects"].add ("markdown_setting");
         table_columns["Projects"].add ("extra_data");
+        // HIDE PROJECTS FEATURE: declare the local-only column so verify_integrity ()
+        // accepts an existing database that already has it.
+        table_columns["Projects"].add ("is_hidden");
 
         table_columns["Queue"] = new Gee.ArrayList<string> ();
         table_columns["Queue"].add ("uuid");
@@ -728,6 +731,16 @@ public class Services.Database : GLib.Object {
          *   after firing, so remember which occurrence already fired
          */
         add_text_column ("Reminders", "fired_at", "");
+
+        /*
+         * HIDE PROJECTS FEATURE
+         * - Add the local-only is_hidden flag to Projects. Kept LAST and idempotent
+         *   (add_int_column no-ops when the column already exists), so it also re-adds
+         *   itself after any future upstream migration that rebuilds the Projects table
+         *   and drops unknown columns. Such a rebuild may reset hidden flags to 0 — that
+         *   is acceptable — but it must never lose other project data.
+         */
+        add_int_column ("Projects", "is_hidden", 0);
     }
 
     public void clear_database () {
@@ -992,7 +1005,25 @@ public class Services.Database : GLib.Object {
         return_value.calendar_source_uid = stmt.column_text (25);
         return_value.markdown_setting = MarkdownSetting.parse (stmt.column_text (26));
         return_value.extra_data = stmt.column_text (27);
+        // HIDE PROJECTS FEATURE: read by column name instead of a fixed index so a
+        // future upstream Projects column can't shift it, and a missing column simply
+        // falls back to "not hidden". Losing the hidden flag is acceptable; misreading
+        // another column as hidden state is not.
+        return_value.is_hidden = get_project_bool_by_name (stmt, "is_hidden", false);
         return return_value;
+    }
+
+    // Reads a boolean column from a Projects row by name, tolerating absent or
+    // reordered columns. Used by the local-only Hide Projects feature.
+    private bool get_project_bool_by_name (Sqlite.Statement stmt, string column, bool fallback) {
+        int count = stmt.column_count ();
+        for (int i = 0; i < count; i++) {
+            if (stmt.column_name (i) == column) {
+                return stmt.column_int (i) == 1;
+            }
+        }
+
+        return fallback;
     }
 
     public bool insert_project (Objects.Project project) {
@@ -1002,11 +1033,11 @@ public class Services.Database : GLib.Object {
             INSERT OR IGNORE INTO Projects (id, name, color, backend_type, inbox_project,
                 team_inbox, child_order, is_deleted, is_archived, is_favorite, shared, view_style,
                 sort_order, parent_id, collapsed, icon_style, emoji, show_completed, description, due_date,
-                inbox_section_hidded, sync_id, source_id, calendar_url, sorted_by, calendar_source_uid, markdown_setting, extra_data)
+                inbox_section_hidded, sync_id, source_id, calendar_url, sorted_by, calendar_source_uid, markdown_setting, extra_data, is_hidden)
             VALUES ($id, $name, $color, $backend_type, $inbox_project, $team_inbox,
                 $child_order, $is_deleted, $is_archived, $is_favorite, $shared, $view_style,
                 $sort_order, $parent_id, $collapsed, $icon_style, $emoji, $show_completed, $description, $due_date,
-                $inbox_section_hidded, $sync_id, $source_id, $calendar_url, $sorted_by, $calendar_source_uid, $markdown_setting, $extra_data);
+                $inbox_section_hidded, $sync_id, $source_id, $calendar_url, $sorted_by, $calendar_source_uid, $markdown_setting, $extra_data, $is_hidden);
         """;
 
         db.prepare_v2 (sql, sql.length, out stmt);
@@ -1038,6 +1069,7 @@ public class Services.Database : GLib.Object {
         set_parameter_str (stmt, "$calendar_source_uid", project.calendar_source_uid);
         set_parameter_str (stmt, "$markdown_setting", project.markdown_setting.to_string ());
         set_parameter_str (stmt, "$extra_data", project.extra_data);
+        set_parameter_bool (stmt, "$is_hidden", project.is_hidden);
 
         int result = stmt.step ();
         if (result != Sqlite.DONE) {
@@ -1116,7 +1148,8 @@ public class Services.Database : GLib.Object {
                 sorted_by=$sorted_by,
                 calendar_source_uid=$calendar_source_uid,
                 markdown_setting=$markdown_setting,
-                extra_data=$extra_data
+                extra_data=$extra_data,
+                is_hidden=$is_hidden
             WHERE id=$id;
         """;
 
@@ -1150,6 +1183,7 @@ public class Services.Database : GLib.Object {
         set_parameter_str (stmt, "$calendar_source_uid", project.calendar_source_uid);
         set_parameter_str (stmt, "$markdown_setting", project.markdown_setting.to_string ());
         set_parameter_str (stmt, "$extra_data", project.extra_data);
+        set_parameter_bool (stmt, "$is_hidden", project.is_hidden);
         set_parameter_str (stmt, "$id", project.id);
 
         int result = stmt.step ();

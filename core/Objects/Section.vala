@@ -393,7 +393,9 @@ public class Objects.Section : Objects.BaseObject {
         int pending_tasks = 0;
         var items = id == "" ? Services.Store.instance ().get_items_by_baseobject (project) : Services.Store.instance ().get_items_by_baseobject (this);
         foreach (Objects.Item item in items) {
-            if (!item.checked && !item.was_archived ()) {
+            // HIDE PROJECTS FEATURE: archive-only check so a hidden project's own
+            // section counts stay accurate when it is opened directly.
+            if (!item.checked && !item.is_in_archived_project ()) {
                 pending_tasks++;
                 pending_tasks += get_subitem_size (item);
             }
